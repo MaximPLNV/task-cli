@@ -1,3 +1,9 @@
 package entities
 
-type Task struct{}
+type Task struct {
+	Id          int
+	Description string
+	Status      string
+	CreatedAt   string
+	UpdatedAt   string
+}
