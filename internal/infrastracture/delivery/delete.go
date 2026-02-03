@@ -1,40 +1,41 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
 */
 package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"task-cli/internal/interfaces"
 
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd represents the delete command
-var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func NewDeleteCmd(uc interfaces.UseCase) *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete <id>",
+		Short: "Delete existing task",
+		Long: `
+		Use this command to delete task record from JSON file
+		Syntax: task-cli delete <task id>
+		`,
+		Args: cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			idstr := args[0]
+			id, convErr := strconv.Atoi(idstr)
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delete called")
-	},
-}
+			if convErr != nil {
+				fmt.Println("Incorrect \"id\" format. Should be integer")
+				return
+			}
 
-func init() {
-	rootCmd.AddCommand(deleteCmd)
+			delErr := uc.Delete(id)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// deleteCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// deleteCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+			if delErr != nil {
+				fmt.Println(delErr)
+				return
+			}
+			fmt.Println("Task has been deleted")
+		},
+	}
 }

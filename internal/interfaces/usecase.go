@@ -1,12 +1,10 @@
 package interfaces
 
-import "task-cli/internal/entities"
-
 type UseCase interface {
-	GetAll() ([]*entities.Task, error)
-	GetByStatus(string) ([]*entities.Task, error)
+	GetAll() ([]*string, error)
+	GetByStatus(string) ([]*string, error)
 	Add(string) error
 	Update(int, string) error
-	UpdateStatus(string) error
+	UpdateStatus(int, string) error
 	Delete(int) error
 }

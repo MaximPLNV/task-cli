@@ -1,40 +1,41 @@
 /*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
 */
 package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"task-cli/internal/interfaces"
 
 	"github.com/spf13/cobra"
 )
 
-// markInProgressCmd represents the markInProgress command
-var markInProgressCmd = &cobra.Command{
-	Use:   "markInProgress",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func NewMarkInProgress(uc interfaces.UseCase) *cobra.Command {
+	return &cobra.Command{
+		Use:   "mark-in-progress <id>",
+		Short: "Update task's status to \"in-progress\"",
+		Long: `
+		Use this command to update task's status and save it to JSON file
+		Syntax: task-cli mark-in-progress <task id>
+		`,
+		Args: cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			idstr := args[0]
+			id, convErr := strconv.Atoi(idstr)
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("markInProgress called")
-	},
-}
+			if convErr != nil {
+				fmt.Println("Incorrect \"id\" format. Should be integer")
+				return
+			}
 
-func init() {
-	rootCmd.AddCommand(markInProgressCmd)
+			updErr := uc.UpdateStatus(id, "in-progress")
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// markInProgressCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// markInProgressCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+			if updErr != nil {
+				fmt.Println(updErr)
+				return
+			}
+			fmt.Println("Status has been update to \"in-progress\"")
+		},
+	}
 }
