@@ -11,6 +11,7 @@ import (
 )
 
 func NewAddCmd(uc interfaces.UseCase) *cobra.Command {
+
 	return &cobra.Command{
 		Use:   "add <description>",
 		Short: "Create new task",
@@ -19,15 +20,20 @@ func NewAddCmd(uc interfaces.UseCase) *cobra.Command {
 		Syntax: task-cli add <string with task description>
 		`,
 		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			d := args[0]
-			err := uc.Add(d)
+		Run:  getAddRunFunc(uc),
+	}
+}
 
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			fmt.Println("Task has been created")
-		},
+func getAddRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		d := args[0]
+		err := uc.Add(d)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		fmt.Println("Task has been created")
 	}
 }

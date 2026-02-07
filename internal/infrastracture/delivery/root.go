@@ -11,14 +11,6 @@ import (
 )
 
 func NewRootCmd(uc interfaces.UseCase) *cobra.Command {
-	subcmds := [6](func(uc interfaces.UseCase) *cobra.Command){
-		NewAddCmd,
-		NewDeleteCmd,
-		NewListCmd,
-		NewMarkDoneCmd,
-		NewMarkInProgress,
-		NewUpdateCmd,
-	}
 
 	rootCmd := &cobra.Command{
 		Use:   "task-cli",
@@ -30,11 +22,26 @@ func NewRootCmd(uc interfaces.UseCase) *cobra.Command {
 		`,
 	}
 
-	for _, subcmd := range subcmds {
-		rootCmd.AddCommand(subcmd(uc))
+	return rootCmd
+}
+
+func initSubcommands(cmd *cobra.Command, uc interfaces.UseCase) {
+	for _, subcmd := range getSubCommands() {
+		cmd.AddCommand(subcmd(uc))
+	}
+}
+
+func getSubCommands() *[6]func(interfaces.UseCase) *cobra.Command {
+	subcmds := [6](func(uc interfaces.UseCase) *cobra.Command){
+		NewAddCmd,
+		NewDeleteCmd,
+		NewListCmd,
+		NewMarkDoneCmd,
+		NewMarkInProgress,
+		NewUpdateCmd,
 	}
 
-	return rootCmd
+	return &subcmds
 }
 
 func Execute(uc interfaces.UseCase) {

@@ -20,22 +20,26 @@ func NewMarkInProgress(uc interfaces.UseCase) *cobra.Command {
 		Syntax: task-cli mark-in-progress <task id>
 		`,
 		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			idstr := args[0]
-			id, convErr := strconv.Atoi(idstr)
+		Run:  getMarkInProgressRunFunc(uc),
+	}
+}
 
-			if convErr != nil {
-				fmt.Println("Incorrect \"id\" format. Should be integer")
-				return
-			}
+func getMarkInProgressRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		idstr := args[0]
+		id, convErr := strconv.Atoi(idstr)
 
-			updErr := uc.UpdateStatus(id, "in-progress")
+		if convErr != nil {
+			fmt.Println("Incorrect \"id\" format. Should be integer")
+			return
+		}
 
-			if updErr != nil {
-				fmt.Println(updErr)
-				return
-			}
-			fmt.Println("Status has been update to \"in-progress\"")
-		},
+		updErr := uc.UpdateStatus(id, "in-progress")
+
+		if updErr != nil {
+			fmt.Println(updErr)
+			return
+		}
+		fmt.Println("Status has been update to \"in-progress\"")
 	}
 }

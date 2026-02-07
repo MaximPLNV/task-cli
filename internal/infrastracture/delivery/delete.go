@@ -20,22 +20,26 @@ func NewDeleteCmd(uc interfaces.UseCase) *cobra.Command {
 		Syntax: task-cli delete <task id>
 		`,
 		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			idstr := args[0]
-			id, convErr := strconv.Atoi(idstr)
+		Run:  getDeleteRunFunc(uc),
+	}
+}
 
-			if convErr != nil {
-				fmt.Println("Incorrect \"id\" format. Should be integer")
-				return
-			}
+func getDeleteRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		idstr := args[0]
+		id, convErr := strconv.Atoi(idstr)
 
-			delErr := uc.Delete(id)
+		if convErr != nil {
+			fmt.Println("Incorrect \"id\" format. Should be integer")
+			return
+		}
 
-			if delErr != nil {
-				fmt.Println(delErr)
-				return
-			}
-			fmt.Println("Task has been deleted")
-		},
+		delErr := uc.Delete(id)
+
+		if delErr != nil {
+			fmt.Println(delErr)
+			return
+		}
+		fmt.Println("Task has been deleted")
 	}
 }

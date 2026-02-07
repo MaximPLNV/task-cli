@@ -20,22 +20,26 @@ func NewMarkDoneCmd(uc interfaces.UseCase) *cobra.Command {
 		Syntax: task-cli mark-done <task id>
 		`,
 		Args: cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			idstr := args[0]
-			id, convErr := strconv.Atoi(idstr)
+		Run:  getMarkDoneRunFunc(uc),
+	}
+}
 
-			if convErr != nil {
-				fmt.Println("Incorrect \"id\" format. Should be integer")
-				return
-			}
+func getMarkDoneRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		idstr := args[0]
+		id, convErr := strconv.Atoi(idstr)
 
-			updErr := uc.UpdateStatus(id, "done")
+		if convErr != nil {
+			fmt.Println("Incorrect \"id\" format. Should be integer")
+			return
+		}
 
-			if updErr != nil {
-				fmt.Println(updErr)
-				return
-			}
-			fmt.Println("Status has been update to \"done\"")
-		},
+		updErr := uc.UpdateStatus(id, "done")
+
+		if updErr != nil {
+			fmt.Println(updErr)
+			return
+		}
+		fmt.Println("Status has been update to \"done\"")
 	}
 }

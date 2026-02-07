@@ -19,25 +19,29 @@ func NewListCmd(uc interfaces.UseCase) *cobra.Command {
 		Syntax: task-cli list [status]
 		`,
 		Args: cobra.MaximumNArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			var err error
-			var tasks []*string
+		Run:  getListRunFunc(uc),
+	}
+}
 
-			if len(args) == 0 {
-				tasks, err = uc.GetAll()
-			} else {
-				s := args[0]
-				tasks, err = uc.GetByStatus(s)
-			}
+func getListRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		var err error
+		var tasks []*string
 
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+		if len(args) == 0 {
+			tasks, err = uc.GetAll()
+		} else {
+			s := args[0]
+			tasks, err = uc.GetByStatus(s)
+		}
 
-			for t := range tasks {
-				fmt.Println(t)
-			}
-		},
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		for t := range tasks {
+			fmt.Println(t)
+		}
 	}
 }

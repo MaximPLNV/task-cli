@@ -20,22 +20,26 @@ func NewUpdateCmd(uc interfaces.UseCase) *cobra.Command {
 		Syntax: task-cli update <task id> <string with new task description>
 		`,
 		Args: cobra.ExactArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
-			idstr, d := args[0], args[1]
-			id, convErr := strconv.Atoi(idstr)
+		Run:  getUpdateRunFunc(uc),
+	}
+}
 
-			if convErr != nil {
-				fmt.Println("Incorrect \"id\" format. Should be integer")
-				return
-			}
+func getUpdateRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
+	return func(cmd *cobra.Command, args []string) {
+		idstr, d := args[0], args[1]
+		id, convErr := strconv.Atoi(idstr)
 
-			updErr := uc.Update(id, d)
+		if convErr != nil {
+			fmt.Println("Incorrect \"id\" format. Should be integer")
+			return
+		}
 
-			if updErr != nil {
-				fmt.Println(updErr)
-				return
-			}
-			fmt.Println("Task has been update")
-		},
+		updErr := uc.Update(id, d)
+
+		if updErr != nil {
+			fmt.Println(updErr)
+			return
+		}
+		fmt.Println("Task has been update")
 	}
 }
