@@ -26,7 +26,7 @@ func NewListCmd(uc interfaces.UseCase) *cobra.Command {
 func getListRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
 	return func(cmd *cobra.Command, args []string) {
 		var err error
-		var tasks []*string
+		var tasks *[]string
 
 		if len(args) == 0 {
 			tasks, err = uc.GetAll()
@@ -40,7 +40,7 @@ func getListRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
 			return
 		}
 
-		for t := range tasks {
+		for _, t := range *tasks {
 			fmt.Println(t)
 		}
 	}

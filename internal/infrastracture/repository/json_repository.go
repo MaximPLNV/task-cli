@@ -11,13 +11,13 @@ func NewJsonRepository() *JsonRepository {
 
 type JsonRepository struct{}
 
-func (jr *JsonRepository) GetAll() ([]*entities.Task, error) {
+func (jr *JsonRepository) GetAll() (*[]entities.Task, error) {
 	fmt.Println("GetAll Repo")
 
 	return nil, nil
 }
 
-func (jr *JsonRepository) GetByStatus(st string) ([]*entities.Task, error) {
+func (jr *JsonRepository) GetByStatus(st string) (*[]entities.Task, error) {
 	fmt.Println("GetByStatus Repo")
 
 	return nil, nil

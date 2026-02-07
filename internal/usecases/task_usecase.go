@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"encoding/json"
+	"errors"
 	"task-cli/internal/entities"
 	"task-cli/internal/interfaces"
 )
@@ -15,16 +17,24 @@ type TaskUseCase struct {
 	repo interfaces.Repository
 }
 
-func (uc *TaskUseCase) GetAll() ([]*string, error) {
-	result, err := uc.repo.GetAll()
-	//json.Marshal(result)
-	return nil, err
+func (uc *TaskUseCase) GetAll() (*[]string, error) {
+	tasks, err := uc.repo.GetAll()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return uc.parseTasksToStr(tasks)
 }
 
-func (uc *TaskUseCase) GetByStatus(st string) ([]*string, error) {
-	result, err := uc.repo.GetByStatus(st)
-	//json.Marshal(result)
-	return nil, err
+func (uc *TaskUseCase) GetByStatus(st string) (*[]string, error) {
+	tasks, err := uc.repo.GetByStatus(st)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return uc.parseTasksToStr(tasks)
 }
 
 func (uc *TaskUseCase) Add(desc string) error {
@@ -61,4 +71,23 @@ func (uc *TaskUseCase) Delete(id int) error {
 	err := uc.repo.Delete(id)
 
 	return err
+}
+
+func (uc *TaskUseCase) parseTasksToStr(tasks *[]entities.Task) (*[]string, error) {
+	if tasks == nil {
+		return nil, errors.New("There is no tasks")
+	}
+
+	result := make([]string, len(*tasks))
+
+	for i, t := range *tasks {
+		b, jsonErr := json.Marshal(t)
+
+		if jsonErr != nil {
+			return nil, jsonErr
+		}
+
+		result[i] = string(b)
+	}
+	return &result, nil
 }

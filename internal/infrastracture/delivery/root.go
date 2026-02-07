@@ -22,6 +22,8 @@ func NewRootCmd(uc interfaces.UseCase) *cobra.Command {
 		`,
 	}
 
+	initSubcommands(rootCmd, uc)
+
 	return rootCmd
 }
 
