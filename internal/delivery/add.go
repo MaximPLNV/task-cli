@@ -1,11 +1,8 @@
-/*
-Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
-*/
 package cmd
 
 import (
 	"fmt"
-	"task-cli/internal/interfaces"
+	"task-cli/internal/domain/interfaces"
 
 	"github.com/spf13/cobra"
 )
@@ -27,9 +24,8 @@ func NewAddCmd(uc interfaces.UseCase) *cobra.Command {
 func getAddRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
 	return func(cmd *cobra.Command, args []string) {
 		d := args[0]
-		err := uc.Add(d)
 
-		if err != nil {
+		if err := uc.Add(d); err != nil {
 			fmt.Println(err)
 			return
 		}

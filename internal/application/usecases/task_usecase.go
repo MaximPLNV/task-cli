@@ -3,8 +3,9 @@ package usecases
 import (
 	"encoding/json"
 	"errors"
-	"task-cli/internal/entities"
-	"task-cli/internal/interfaces"
+	"task-cli/internal/domain/entities"
+	"task-cli/internal/domain/interfaces"
+	"time"
 )
 
 func NewTaskUseCase(repo interfaces.Repository) *TaskUseCase {
@@ -40,37 +41,42 @@ func (uc *TaskUseCase) GetByStatus(st string) (*[]string, error) {
 func (uc *TaskUseCase) Add(desc string) error {
 	task := &entities.Task{
 		Description: desc,
-		Status:      "todo",
+		Status:      "ToDo",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
-	err := uc.repo.Add(task)
 
-	return err
+	return uc.repo.Add(task)
 }
 
 func (uc *TaskUseCase) Update(id int, desc string) error {
-	task := &entities.Task{
-		Id:          id,
-		Description: desc,
-	}
-	err := uc.repo.Update(task)
+	t, err := uc.repo.GetById(id)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	t.Description = desc
+	t.UpdatedAt = time.Now()
+
+	return uc.repo.Update(t)
 }
 
 func (uc *TaskUseCase) UpdateStatus(id int, st string) error {
-	task := &entities.Task{
-		Id:     id,
-		Status: st,
-	}
-	err := uc.repo.Update(task)
+	t, err := uc.repo.GetById(id)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	t.Status = st
+	t.UpdatedAt = time.Now()
+
+	return uc.repo.Update(t)
 }
 
 func (uc *TaskUseCase) Delete(id int) error {
-	err := uc.repo.Delete(id)
-
-	return err
+	return uc.repo.Delete(id)
 }
 
 func (uc *TaskUseCase) parseTasksToStr(tasks *[]entities.Task) (*[]string, error) {

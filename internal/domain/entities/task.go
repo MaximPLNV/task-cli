@@ -1,9 +1,11 @@
 package entities
 
+import "time"
+
 type Task struct {
 	Id          int
 	Description string
 	Status      string
-	CreatedAt   string
-	UpdatedAt   string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

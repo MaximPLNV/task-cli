@@ -1,12 +1,9 @@
-/*
-Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
-*/
 package cmd
 
 import (
 	"fmt"
 	"strconv"
-	"task-cli/internal/interfaces"
+	"task-cli/internal/domain/interfaces"
 
 	"github.com/spf13/cobra"
 )
@@ -34,12 +31,11 @@ func getDeleteRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
 			return
 		}
 
-		delErr := uc.Delete(id)
-
-		if delErr != nil {
+		if delErr := uc.Delete(id); delErr != nil {
 			fmt.Println(delErr)
 			return
 		}
+
 		fmt.Println("Task has been deleted")
 	}
 }

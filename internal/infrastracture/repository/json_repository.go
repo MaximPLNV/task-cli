@@ -4,69 +4,96 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
-	"task-cli/internal/entities"
+	"task-cli/internal/domain/entities"
 )
 
-func NewJsonRepository(file string) *JsonRepository {
+func NewJsonRepository(fileName string) *JsonRepository {
 	jr := JsonRepository{}
-	jr.fileName = file
-	jr.tempFilePattern = "temp-tasks-*"
-	jr.fileAccessFlags = os.O_RDONLY
+	jr.fileName = fileName
 
 	return &jr
 }
 
 type JsonRepository struct {
-	fileName        string
-	tempFilePattern string
-	fileAccessFlags int
+	fileName string
+}
+
+func (jr *JsonRepository) GetById(id int) (*entities.Task, error) {
+	worker := NewReadWorker(jr.fileName)
+	var taskById *entities.Task
+
+	worker.lineAction = func(t *entities.Task) {
+		if t.Id == id {
+			taskById = t
+			worker.finishAction <- true
+		} else if t.Id > id {
+			worker.finishAction <- true
+		}
+	}
+
+	if err := worker.ReadByLine(); err != nil {
+		return nil, err
+	}
+
+	if taskById == nil {
+		return nil, errors.New("Task with the Id not found")
+	}
+
+	return taskById, nil
 }
 
 func (jr *JsonRepository) GetAll() (*[]entities.Task, error) {
-	file, err := jr.openFile()
+	worker := NewReadWorker(jr.fileName)
+	var tasks []entities.Task
 
-	if err != nil {
+	worker.lineAction = func(t *entities.Task) {
+		tasks = append(tasks, *t)
+	}
+
+	if err := worker.ReadByLine(); err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
-	tasks := jr.parseTasks(file, "")
-	return tasks, nil
+	if len(tasks) < 1 {
+		return nil, errors.New("There is no any task in the file")
+	}
+
+	return &tasks, nil
 }
 
 func (jr *JsonRepository) GetByStatus(st string) (*[]entities.Task, error) {
-	file, err := jr.openFile()
+	worker := NewReadWorker(jr.fileName)
+	var tasks []entities.Task
 
-	if err != nil {
+	worker.lineAction = func(t *entities.Task) {
+		if t.Status == st {
+			tasks = append(tasks, *t)
+		}
+	}
+
+	if err := worker.ReadByLine(); err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
-	tasks := jr.parseTasks(file, st)
-	return tasks, nil
+	if len(tasks) < 1 {
+		return nil, errors.New("There is no any task with this status")
+	}
+
+	return &tasks, nil
 }
 
 func (jr *JsonRepository) Add(newT *entities.Task) error {
-	jr.fileAccessFlags = jr.fileAccessFlags | os.O_CREATE
-
+	worker := NewWriteWorker(jr.fileName)
 	firstFreeId := 0
 	isInserted := false
-	fn := func(line *[]byte, wr *bufio.Writer) error {
-		var t entities.Task
-		parsingErr := json.Unmarshal(*line, &t)
 
-		if parsingErr != nil {
-			return nil
-		}
-
+	worker.lineAction = func(t *entities.Task, line *[]byte, wr *bufio.Writer) error {
 		if !isInserted && firstFreeId != t.Id {
 			newT.Id = firstFreeId
 			jsonData, jsonErr := json.Marshal(newT)
 
 			if jsonErr != nil {
-				return jr.generateModificationError()
+				return errors.New("File modification issues")
 			}
 
 			wr.Write(jsonData)
@@ -78,13 +105,13 @@ func (jr *JsonRepository) Add(newT *entities.Task) error {
 		return nil
 	}
 
-	afterFn := func(wr *bufio.Writer) error {
+	worker.postWriteAction = func(wr *bufio.Writer) error {
 		if !isInserted {
 			newT.Id = firstFreeId
 			jsonData, jsonErr := json.Marshal(newT)
 
 			if jsonErr != nil {
-				return jr.generateModificationError()
+				return errors.New("File modification issues")
 			}
 
 			wr.Write(jsonData)
@@ -94,25 +121,19 @@ func (jr *JsonRepository) Add(newT *entities.Task) error {
 		return nil
 	}
 
-	return jr.updateFileByLine(fn, afterFn)
+	return worker.WriteByLine()
 }
 
 func (jr *JsonRepository) Update(updTask *entities.Task) error {
+	worker := NewWriteWorker(jr.fileName)
 	isUpdated := false
 
-	fn := func(line *[]byte, wr *bufio.Writer) error {
-		var t entities.Task
-		parsingErr := json.Unmarshal(*line, &t)
-
-		if parsingErr != nil {
-			return nil
-		}
-
+	worker.lineAction = func(t *entities.Task, line *[]byte, wr *bufio.Writer) error {
 		if t.Id == updTask.Id {
 			jsonData, jsonErr := json.Marshal(updTask)
 
 			if jsonErr != nil {
-				return jr.generateModificationError()
+				return errors.New("File modification issues")
 			}
 
 			line = &jsonData
@@ -124,104 +145,18 @@ func (jr *JsonRepository) Update(updTask *entities.Task) error {
 		wr.Write(*line)
 		return nil
 	}
-
-	return jr.updateFileByLine(fn, nil)
+	return worker.WriteByLine()
 }
 
 func (jr *JsonRepository) Delete(id int) error {
-	fn := func(line *[]byte, wr *bufio.Writer) error {
-		var t entities.Task
-		parsingErr := json.Unmarshal(*line, &t)
+	worker := NewWriteWorker(jr.fileName)
 
-		if parsingErr == nil && t.Id != id {
+	worker.lineAction = func(t *entities.Task, line *[]byte, wr *bufio.Writer) error {
+		if t.Id != id {
 			wr.Write(*line)
 		}
 
 		return nil
 	}
-
-	return jr.updateFileByLine(fn, nil)
-}
-
-func (jr *JsonRepository) openFile() (*os.File, error) {
-	file, openErr := os.OpenFile(jr.fileName, jr.fileAccessFlags, 0644)
-
-	if openErr != nil {
-		return nil, fmt.Errorf("There is no %s file", jr.fileName)
-	}
-
-	return file, nil
-}
-
-func (jr *JsonRepository) parseTasks(file *os.File, st string) *[]entities.Task {
-	var tasks []entities.Task
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		var t entities.Task
-		line := scanner.Bytes()
-		err := json.Unmarshal(line, &t)
-
-		if err != nil {
-			fmt.Printf("Issue during parsing line \"%s\"\n", line)
-			continue
-		}
-
-		if st == "" || st == t.Status {
-			tasks = append(tasks, t)
-		}
-	}
-
-	return &tasks
-}
-
-func (jr *JsonRepository) generateModificationError() error {
-	return errors.New("File modification issues")
-}
-
-func (jr *JsonRepository) updateFileByLine(fn func(*[]byte, *bufio.Writer) error, aftScanFn func(*bufio.Writer) error) error {
-	file, err := jr.openFile()
-
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	tmp, tmpErr := os.CreateTemp("", jr.tempFilePattern)
-
-	if tmpErr != nil {
-		return jr.generateModificationError()
-	}
-	defer os.Remove(tmp.Name())
-	defer tmp.Close()
-
-	scanner := bufio.NewScanner(file)
-	writer := bufio.NewWriter(tmp)
-
-	for scanner.Scan() {
-		line := scanner.Bytes()
-
-		if fnErr := fn(&line, writer); fnErr != nil {
-			return err
-		}
-
-	}
-
-	if aftScanFn != nil {
-		if aftScanFnErr := aftScanFn(writer); aftScanFnErr != nil {
-			return aftScanFnErr
-		}
-	}
-
-	return jr.saveChanges(tmp, writer)
-}
-
-func (jr *JsonRepository) saveChanges(file *os.File, writer *bufio.Writer) error {
-	writer.Flush()
-
-	if renameErr := os.Rename(file.Name(), jr.fileName); renameErr != nil {
-		return jr.generateModificationError()
-	}
-
-	return nil
+	return worker.WriteByLine()
 }

@@ -1,12 +1,9 @@
-/*
-Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
-*/
 package cmd
 
 import (
 	"fmt"
 	"strconv"
-	"task-cli/internal/interfaces"
+	"task-cli/internal/domain/interfaces"
 
 	"github.com/spf13/cobra"
 )
@@ -34,12 +31,11 @@ func getMarkInProgressRunFunc(uc interfaces.UseCase) func(*cobra.Command, []stri
 			return
 		}
 
-		updErr := uc.UpdateStatus(id, "in-progress")
-
-		if updErr != nil {
+		if updErr := uc.UpdateStatus(id, "In Progress"); updErr != nil {
 			fmt.Println(updErr)
 			return
 		}
+
 		fmt.Println("Status has been update to \"in-progress\"")
 	}
 }

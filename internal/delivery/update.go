@@ -1,12 +1,9 @@
-/*
-Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
-*/
 package cmd
 
 import (
 	"fmt"
 	"strconv"
-	"task-cli/internal/interfaces"
+	"task-cli/internal/domain/interfaces"
 
 	"github.com/spf13/cobra"
 )
@@ -34,12 +31,11 @@ func getUpdateRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
 			return
 		}
 
-		updErr := uc.Update(id, d)
-
-		if updErr != nil {
+		if updErr := uc.Update(id, d); updErr != nil {
 			fmt.Println(updErr)
 			return
 		}
+
 		fmt.Println("Task has been update")
 	}
 }

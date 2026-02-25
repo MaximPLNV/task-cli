@@ -1,12 +1,9 @@
-/*
-Copyright © 2026 Maksim Palynov <m.palynov@gmail.com>
-*/
 package cmd
 
 import (
 	"fmt"
 	"strconv"
-	"task-cli/internal/interfaces"
+	"task-cli/internal/domain/interfaces"
 
 	"github.com/spf13/cobra"
 )
@@ -34,12 +31,11 @@ func getMarkDoneRunFunc(uc interfaces.UseCase) func(*cobra.Command, []string) {
 			return
 		}
 
-		updErr := uc.UpdateStatus(id, "done")
-
-		if updErr != nil {
+		if updErr := uc.UpdateStatus(id, "Done"); updErr != nil {
 			fmt.Println(updErr)
 			return
 		}
+
 		fmt.Println("Status has been update to \"done\"")
 	}
 }

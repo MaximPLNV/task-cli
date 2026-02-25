@@ -1,17 +1,16 @@
-/*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-*/
 package main
 
 import (
-	cmd "task-cli/internal/infrastracture/delivery"
+	"task-cli/internal/application/usecases"
+	cmd "task-cli/internal/delivery"
+	"task-cli/internal/domain/interfaces"
 	"task-cli/internal/infrastracture/repository"
-	"task-cli/internal/interfaces"
-	"task-cli/internal/usecases"
 )
 
+var FILE_NAME string = "task.json"
+
 func main() {
-	var repo interfaces.Repository = repository.NewJsonRepository()
+	var repo interfaces.Repository = repository.NewJsonRepository(FILE_NAME)
 	var uc interfaces.UseCase = usecases.NewTaskUseCase(repo)
 	cmd.Execute(uc)
 }
